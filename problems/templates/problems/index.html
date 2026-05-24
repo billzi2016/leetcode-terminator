@@ -1,0 +1,658 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetCode Terminator</title>
+  <link rel="stylesheet" href="{% static 'vendor/highlight-github-dark.min.css' %}">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── 顶栏 ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: 48px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 15px; font-weight: 600; color: #58a6ff; }
+    #health-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #8b949e;
+    }
+    #health-dot span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #3fb950;
+      display: inline-block;
+    }
+    #health-dot.down span { background: #f85149; }
+
+    /* ── 主体 ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── 左栏 ── */
+    aside {
+      width: 280px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #30363d;
+      background: #161b22;
+    }
+    .sidebar-filters {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-bottom: 1px solid #30363d;
+    }
+    .sidebar-filters input,
+    .sidebar-filters select {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      width: 100%;
+    }
+    .sidebar-filters input:focus,
+    .sidebar-filters select:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    #problem-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+    .problem-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      border-left: 3px solid transparent;
+      transition: background 0.1s;
+    }
+    .problem-item:hover { background: #1c2128; }
+    .problem-item.active {
+      background: #1c2128;
+      border-left-color: #58a6ff;
+    }
+    .problem-item .pid { color: #8b949e; min-width: 36px; }
+    .problem-item .ptitle { flex: 1; margin: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .badge.Easy    { background: #1a4a2e; color: #3fb950; }
+    .badge.Medium  { background: #4a3520; color: #e3b341; }
+    .badge.Hard    { background: #4a1a1a; color: #f85149; }
+
+    /* ── 右栏 ── */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .problem-header h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+    .problem-meta { display: flex; gap: 10px; align-items: center; font-size: 13px; color: #8b949e; }
+    .topic-tag {
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+
+    /* ── 卡片区块 ── */
+    .section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #1c2128;
+      border-bottom: 1px solid #30363d;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .section-body {
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .section-body.md-body { white-space: normal; }
+
+    /* ── Markdown 渲染样式 ── */
+    .md-body h2 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: #58a6ff; }
+    .md-body p  { margin-bottom: 10px; }
+    .md-body pre { margin: 10px 0; border-radius: 8px; overflow: auto; }
+    .md-body code:not(pre code) {
+      background: #1c2128;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .md-body ul, .md-body ol { padding-left: 20px; margin-bottom: 10px; }
+
+    /* ── 按钮 ── */
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 5px 14px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #21262d;
+      color: #e6edf3;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #30363d; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn.primary { background: #1f6feb; border-color: #1f6feb; }
+    .btn.primary:hover { background: #388bfd; }
+
+    /* ── 举一反三 tabs ── */
+    .similar-tabs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid #30363d;
+      background: transparent;
+      color: #8b949e;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+    /* 空状态 */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      color: #8b949e;
+      gap: 8px;
+    }
+    #empty-state h3 { font-size: 16px; }
+    #empty-state p  { font-size: 13px; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<header>
+  <h1>⚡ LeetCode Terminator</h1>
+  <div id="health-dot">
+    <span></span>
+    <span id="health-label">检测中...</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- 左栏：题目列表 -->
+  <aside>
+    <div class="sidebar-filters">
+      <input id="search-input" type="text" placeholder="搜索题目..." />
+      <select id="diff-filter">
+        <option value="">全部难度</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+    </div>
+    <div id="problem-list"></div>
+  </aside>
+
+  <!-- 右栏：题目详情 + 操作 -->
+  <main id="main-panel">
+    <div id="empty-state">
+      <h3>选择一道题目开始</h3>
+      <p>从左侧列表点击任意题目</p>
+    </div>
+
+    <!-- 题目详情区（初始隐藏） -->
+    <div id="problem-detail" style="display:none;">
+
+      <!-- 题目标题 & meta -->
+      <div class="problem-header">
+        <h2 id="detail-title"></h2>
+        <div class="problem-meta">
+          <span id="detail-difficulty" class="badge"></span>
+          <span id="detail-topics"></span>
+        </div>
+      </div>
+
+      <!-- 英文原题 -->
+      <div class="section">
+        <div class="section-header">英文原题</div>
+        <div id="original-body" class="section-body"></div>
+      </div>
+
+      <!-- 中文翻译 -->
+      <div class="section">
+        <div class="section-header">
+          中文翻译
+          <div class="btn-group">
+            <button class="btn" id="btn-translate" onclick="startTranslation()">开始翻译</button>
+            <button class="btn" id="btn-retranslate" style="display:none" onclick="startTranslation(true)">重新翻译</button>
+          </div>
+        </div>
+        <div id="translation-body" class="section-body md-body"></div>
+      </div>
+
+      <!-- 中文题解 -->
+      <div class="section">
+        <div class="section-header">
+          中文题解
+          <div class="btn-group">
+            <button class="btn primary" id="btn-solve" onclick="startSolution()">生成题解</button>
+            <button class="btn" id="btn-resolove" style="display:none" onclick="startSolution(true)">重新生成</button>
+          </div>
+        </div>
+        <div id="solution-body" class="section-body md-body"></div>
+      </div>
+
+      <!-- 举一反三 -->
+      <div class="section">
+        <div class="section-header">
+          举一反三
+          <button class="btn primary" onclick="addSimilar()">+ 新增</button>
+        </div>
+        <div style="padding: 12px 16px; border-bottom: 1px solid #30363d;">
+          <div class="similar-tabs" id="similar-tabs"></div>
+        </div>
+        <div id="similar-panel" style="padding:16px;">
+          <p style="color:#8b949e; font-size:13px;">点击「+ 新增」生成相似题目</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="{% static 'vendor/htmx.min.js' %}"></script>
+<script src="{% static 'vendor/marked.min.js' %}"></script>
+<script src="{% static 'vendor/highlight.min.js' %}"></script>
+<script>
+// ── marked + highlight.js 集成 ──
+marked.setOptions({
+  highlight: (code, lang) => {
+    const language = hljs.getLanguage(lang) ? lang : 'python';
+    return hljs.highlight(code, { language }).value;
+  },
+  breaks: true,
+});
+
+// ── 全局状态 ──
+let currentId = null;       // 当前选中题目 id
+let currentSimilarN = null; // 当前举一反三 tab
+let allProblems = [];       // 完整题目列表缓存
+let activeStream = null;    // 当前 SSE 连接，切题时关闭
+
+// ── Ollama 健康轮询 ──
+function pollHealth() {
+  fetch('/api/health/')
+    .then(r => r.json())
+    .then(data => {
+      const dot = document.getElementById('health-dot');
+      const label = document.getElementById('health-label');
+      if (data.status === 'ok') {
+        dot.className = '';
+        label.textContent = 'Ollama 在线';
+      } else {
+        dot.className = 'down';
+        label.textContent = 'Ollama 离线';
+      }
+    })
+    .catch(() => {
+      document.getElementById('health-dot').className = 'down';
+      document.getElementById('health-label').textContent = 'Ollama 离线';
+    });
+}
+pollHealth();
+setInterval(pollHealth, 15000);
+
+// ── 加载题目列表 ──
+function loadProblems(q = '', difficulty = '') {
+  const params = new URLSearchParams({ page_size: 2913 });
+  if (q) params.set('q', q);
+  if (difficulty) params.set('difficulty', difficulty);
+  fetch('/api/problems/?' + params)
+    .then(r => r.json())
+    .then(data => {
+      allProblems = data.results;
+      renderList(data.results);
+    });
+}
+
+function renderList(problems) {
+  const list = document.getElementById('problem-list');
+  list.innerHTML = problems.map(p => `
+    <div class="problem-item ${p.id === currentId ? 'active' : ''}"
+         onclick="selectProblem(${p.id})">
+      <span class="pid">${p.id}.</span>
+      <span class="ptitle">${p.title}</span>
+      <span class="badge ${p.difficulty}">${p.difficulty}</span>
+    </div>
+  `).join('');
+}
+
+// ── 搜索 & 筛选 ──
+document.getElementById('search-input').addEventListener('input', debounce(() => {
+  loadProblems(
+    document.getElementById('search-input').value,
+    document.getElementById('diff-filter').value
+  );
+}, 300));
+document.getElementById('diff-filter').addEventListener('change', () => {
+  loadProblems(
+    document.getElementById('search-input').value,
+    document.getElementById('diff-filter').value
+  );
+});
+
+// ── 选题 ──
+function selectProblem(id) {
+  if (activeStream) { activeStream.close(); activeStream = null; }
+  currentId = id;
+  currentSimilarN = null;
+
+  // 高亮左栏
+  document.querySelectorAll('.problem-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.problem-item').forEach(el => {
+    if (el.onclick.toString().includes(`(${id})`)) el.classList.add('active');
+  });
+
+  fetch(`/api/problems/${id}/`)
+    .then(r => r.json())
+    .then(p => {
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('problem-detail').style.display = '';
+
+      document.getElementById('detail-title').textContent = `${p.frontend_id}. ${p.title}`;
+      const diff = document.getElementById('detail-difficulty');
+      diff.textContent = p.difficulty;
+      diff.className = `badge ${p.difficulty}`;
+      document.getElementById('detail-topics').innerHTML =
+        (p.topics || []).map(t => `<span class="topic-tag">${t}</span>`).join(' ');
+      document.getElementById('original-body').textContent = p.description || '';
+
+      // 重置区块
+      resetSection('translation-body', 'btn-translate', 'btn-retranslate');
+      resetSection('solution-body', 'btn-solve', 'btn-resolove');
+      document.getElementById('similar-tabs').innerHTML = '';
+      document.getElementById('similar-panel').innerHTML =
+        '<p style="color:#8b949e;font-size:13px;">点击「+ 新增」生成相似题目</p>';
+
+      // 加载已有缓存
+      loadTranslation();
+      loadSolution();
+      loadSimilarList();
+    });
+}
+
+function resetSection(bodyId, btnId, reBtnId) {
+  document.getElementById(bodyId).innerHTML = '';
+  document.getElementById(btnId).style.display = '';
+  document.getElementById(reBtnId).style.display = 'none';
+}
+
+// ── 翻译 ──
+function loadTranslation() {
+  fetch(`/api/solutions/${currentId}/translation/`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.content) showTranslation(d.content);
+    });
+}
+function showTranslation(md) {
+  document.getElementById('translation-body').innerHTML = marked.parse(md);
+  document.getElementById('btn-translate').style.display = 'none';
+  document.getElementById('btn-retranslate').style.display = '';
+  hljs.highlightAll();
+}
+function startTranslation(regen = false) {
+  document.getElementById('btn-translate').disabled = true;
+  document.getElementById('btn-retranslate').disabled = true;
+  document.getElementById('translation-body').innerHTML =
+    '<span style="color:#8b949e">翻译中...</span>';
+  streamSSE(`/api/solutions/${currentId}/translation/stream/`, 'translation-body', () => {
+    loadTranslation();
+    document.getElementById('btn-translate').disabled = false;
+    document.getElementById('btn-retranslate').disabled = false;
+  });
+}
+
+// ── 题解 ──
+function loadSolution() {
+  fetch(`/api/solutions/${currentId}/solution/`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.content) showSolution(d.content);
+    });
+}
+function showSolution(md) {
+  document.getElementById('solution-body').innerHTML = marked.parse(md);
+  document.getElementById('btn-solve').style.display = 'none';
+  document.getElementById('btn-resolove').style.display = '';
+  hljs.highlightAll();
+}
+function startSolution(regen = false) {
+  document.getElementById('btn-solve').disabled = true;
+  document.getElementById('btn-resolove').disabled = true;
+  document.getElementById('solution-body').innerHTML =
+    '<span style="color:#8b949e">生成中...</span>';
+  streamSSE(`/api/solutions/${currentId}/solution/stream/`, 'solution-body', () => {
+    loadSolution();
+    document.getElementById('btn-solve').disabled = false;
+    document.getElementById('btn-resolove').disabled = false;
+  });
+}
+
+// ── 举一反三 ──
+function loadSimilarList() {
+  fetch(`/api/solutions/${currentId}/similar/`)
+    .then(r => r.json())
+    .then(d => {
+      const tabs = document.getElementById('similar-tabs');
+      tabs.innerHTML = (d.items || []).map(n =>
+        `<button class="tab-btn ${n === currentSimilarN ? 'active' : ''}"
+                 onclick="selectSimilarTab(${n})">#${n}</button>`
+      ).join('');
+    });
+}
+function selectSimilarTab(n) {
+  currentSimilarN = n;
+  loadSimilarList();
+  const panel = document.getElementById('similar-panel');
+  panel.innerHTML = '<span style="color:#8b949e">加载中...</span>';
+  fetch(`/api/solutions/${currentId}/similar/${n}/problem/`)
+    .then(r => r.json())
+    .then(d => {
+      renderSimilarPanel(n, d.content);
+    });
+}
+function renderSimilarPanel(n, problemMd) {
+  const panel = document.getElementById('similar-panel');
+  const hasProblem = !!problemMd;
+  panel.innerHTML = `
+    <div class="section-body md-body" id="similar-problem-body">
+      ${hasProblem ? marked.parse(problemMd) : '<span style="color:#8b949e">题目生成中...</span>'}
+    </div>
+    <div class="btn-group" style="margin:12px 0;">
+      ${hasProblem
+        ? `<button class="btn" onclick="regenSimilarProblem(${n})">重新出题</button>`
+        : ''}
+    </div>
+    <hr style="border-color:#30363d; margin:12px 0;">
+    <div class="section-body md-body" id="similar-solution-body"></div>
+    <div class="btn-group" style="margin-top:8px;">
+      <button class="btn primary" id="btn-similar-solve"
+              onclick="startSimilarSolution(${n})" ${!hasProblem ? 'disabled' : ''}>
+        生成解法
+      </button>
+      <button class="btn" id="btn-similar-resolove" style="display:none"
+              onclick="startSimilarSolution(${n}, true)">重新解题</button>
+    </div>
+  `;
+  hljs.highlightAll();
+  // 加载已有题解缓存
+  fetch(`/api/solutions/${currentId}/similar/${n}/solution/`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.content) {
+        document.getElementById('similar-solution-body').innerHTML = marked.parse(d.content);
+        document.getElementById('btn-similar-solve').style.display = 'none';
+        document.getElementById('btn-similar-resolove').style.display = '';
+        hljs.highlightAll();
+      }
+    });
+}
+function addSimilar() {
+  // 取当前最大序号 + 1
+  fetch(`/api/solutions/${currentId}/similar/`)
+    .then(r => r.json())
+    .then(d => {
+      const items = d.items || [];
+      const n = items.length > 0 ? Math.max(...items) + 1 : 1;
+      currentSimilarN = n;
+      loadSimilarList();
+      renderSimilarPanel(n, null);
+      // 立即开始生成题目
+      streamSSE(
+        `/api/solutions/${currentId}/similar/${n}/problem/stream/`,
+        'similar-problem-body',
+        () => { selectSimilarTab(n); }
+      );
+    });
+}
+function regenSimilarProblem(n) {
+  renderSimilarPanel(n, null);
+  streamSSE(
+    `/api/solutions/${currentId}/similar/${n}/problem/stream/`,
+    'similar-problem-body',
+    () => { selectSimilarTab(n); }
+  );
+}
+function startSimilarSolution(n, regen = false) {
+  document.getElementById('btn-similar-solve').disabled = true;
+  document.getElementById('similar-solution-body').innerHTML =
+    '<span style="color:#8b949e">生成中...</span>';
+  streamSSE(
+    `/api/solutions/${currentId}/similar/${n}/solution/stream/`,
+    'similar-solution-body',
+    () => {
+      fetch(`/api/solutions/${currentId}/similar/${n}/solution/`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.content) {
+            document.getElementById('similar-solution-body').innerHTML = marked.parse(d.content);
+            document.getElementById('btn-similar-solve').style.display = 'none';
+            if (document.getElementById('btn-similar-resolove'))
+              document.getElementById('btn-similar-resolove').style.display = '';
+            hljs.highlightAll();
+          }
+        });
+    }
+  );
+}
+
+// ── SSE streaming 核心函数 ──
+function streamSSE(url, targetId, onDone) {
+  if (activeStream) activeStream.close();
+  let buffer = '';
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  target.innerHTML = '';
+
+  const es = new EventSource(url);
+  activeStream = es;
+
+  es.onmessage = (e) => {
+    if (e.data === '[DONE]') {
+      es.close();
+      activeStream = null;
+      if (onDone) onDone();
+      return;
+    }
+    try {
+      buffer += JSON.parse(e.data);
+      // 边流边渲染 Markdown，使用 marked 实时更新
+      target.innerHTML = marked.parse(buffer);
+      hljs.highlightAll();
+      // 自动滚动到底部
+      target.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    } catch (err) { /* 忽略解析错误，等待完整 chunk */ }
+  };
+
+  es.onerror = () => {
+    es.close();
+    activeStream = null;
+  };
+}
+
+// ── 防抖工具 ──
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+// ── 初始加载题目列表 ──
+loadProblems();
+</script>
+</body>
+</html>
