@@ -143,6 +143,12 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .problem-item .solved-check {
+      font-size: 12px;
+      color: #1a7f37;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
 
     .badge {
       font-size: 11px;
@@ -491,6 +497,7 @@ let currentSimilarN = null;
 let activeStream = null;
 let currentThink = null; // null = 默认，'high' = 深度推理
 let currentTopic = null;
+let solvedIds = new Set();
 
 function setThink(val) {
   currentThink = val;
@@ -562,7 +569,7 @@ function loadProblems(q = '', difficulty = '') {
   if (q) p.set('q', q);
   if (difficulty) p.set('difficulty', difficulty);
   if (currentTopic) p.set('topic', currentTopic);
-  fetch('/api/problems/?' + p)
+  return fetch('/api/problems/?' + p)
     .then(r => r.json())
     .then(d => renderList(d.results));
 }
@@ -574,8 +581,45 @@ function renderList(problems) {
       <span class="pid">${p.id}.</span>
       <span class="ptitle">${p.title}</span>
       <span class="badge ${p.difficulty}">${p.difficulty}</span>
+      ${solvedIds.has(p.id) ? '<span class="solved-check">✓</span>' : ''}
     </div>
   `).join('');
+  // 滚动到当前选中项
+  const active = document.querySelector('#problem-list .problem-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function loadSolved() {
+  fetch('/api/solutions/solved/')
+    .then(r => r.json())
+    .then(d => {
+      solvedIds = new Set(d.ids);
+      // 刷新列表中的勾号（不重新请求，直接更新 DOM）
+      document.querySelectorAll('#problem-list .problem-item').forEach(el => {
+        const id = parseInt(el.querySelector('.pid').textContent);
+        const existing = el.querySelector('.solved-check');
+        if (solvedIds.has(id) && !existing) {
+          const span = document.createElement('span');
+          span.className = 'solved-check';
+          span.textContent = '✓';
+          el.appendChild(span);
+        }
+      });
+    });
+}
+
+function markSolved(id) {
+  if (solvedIds.has(id)) return;
+  solvedIds.add(id);
+  document.querySelectorAll('#problem-list .problem-item').forEach(el => {
+    const elId = parseInt(el.querySelector('.pid').textContent);
+    if (elId === id && !el.querySelector('.solved-check')) {
+      const span = document.createElement('span');
+      span.className = 'solved-check';
+      span.textContent = '✓';
+      el.appendChild(span);
+    }
+  });
 }
 
 document.getElementById('search-input').addEventListener('input', debounce(() => {
@@ -592,6 +636,7 @@ function selectProblem(id) {
   if (activeStream) { activeStream.close(); activeStream = null; }
   currentId = id;
   currentSimilarN = null;
+  localStorage.setItem('lastProblemId', id);
 
   // 高亮左栏条目
   document.querySelectorAll('.problem-item').forEach(el => {
@@ -666,6 +711,7 @@ function showSolution(md) {
   document.getElementById('btn-solve').style.display = 'none';
   document.getElementById('btn-resolove').style.display = '';
   renderCode();
+  markSolved(currentId);
 }
 function startSolution() {
   setButtonsDisabled(['btn-solve', 'btn-resolove'], true);
@@ -877,7 +923,11 @@ function debounce(fn, delay) {
 }
 
 loadMeta();
-loadProblems();
+loadSolved();
+loadProblems().then(() => {
+  const lastId = localStorage.getItem('lastProblemId');
+  if (lastId) selectProblem(parseInt(lastId));
+});
 </script>
 </body>
 </html>

@@ -118,6 +118,20 @@ def meta(request):
     }
 
 
+@api.get("/solutions/solved/")
+def list_solved(request):
+    """返回已生成 solution.md 的题目 ID 列表。"""
+    base = Path(settings.SOLUTIONS_DIR)
+    if not base.exists():
+        return {"ids": []}
+    ids = sorted(
+        int(d.name)
+        for d in base.iterdir()
+        if d.is_dir() and d.name.isdigit() and (d / "solution.md").exists()
+    )
+    return {"ids": ids}
+
+
 # ────────────────────────────────────────────────────────────
 # 题目列表 & 详情
 # ────────────────────────────────────────────────────────────
