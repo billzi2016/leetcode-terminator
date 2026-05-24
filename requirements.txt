@@ -1,0 +1,8 @@
+django
+django-ninja
+django-eventstream
+django-filter
+ollama
+pytest
+pytest-django
+ruff
