@@ -230,6 +230,25 @@
       border: 1px solid #d0d7de;
       font-size: 14px;
     }
+    /* 行号 */
+    .md-body pre code.hljs {
+      counter-reset: ln;
+      padding-left: 3.2em;
+    }
+    .md-body pre code.hljs .ln::before {
+      counter-increment: ln;
+      content: counter(ln);
+      display: inline-block;
+      width: 2em;
+      margin-left: -2.8em;
+      margin-right: 0.8em;
+      text-align: right;
+      color: #8c959f;
+      border-right: 1px solid #d0d7de;
+      padding-right: 0.6em;
+      user-select: none;
+      font-size: 12px;
+    }
     .md-body code:not(pre code) {
       background: #f6f8fa;
       border: 1px solid #d0d7de;
@@ -455,6 +474,17 @@ marked.setOptions({
   breaks: true,
 });
 
+function renderCode() {
+  hljs.highlightAll();
+  document.querySelectorAll('pre code.hljs').forEach(block => {
+    if (block.dataset.ln) return;
+    const lines = block.innerHTML.split('\n');
+    if (lines.at(-1) === '') lines.pop();
+    block.innerHTML = lines.map(l => `<span class="ln">${l}</span>`).join('\n');
+    block.dataset.ln = '1';
+  });
+}
+
 let currentId = null;
 let currentSimilarN = null;
 let activeStream = null;
@@ -583,7 +613,7 @@ function selectProblem(id) {
       // 用 marked 渲染拼装后的完整英文描述
       document.getElementById('original-body').innerHTML =
         marked.parse(p.formatted_description || p.description || '');
-      hljs.highlightAll();
+      renderCode();
 
       resetSection('translation-body', 'btn-translate', 'btn-retranslate');
       resetSection('solution-body', 'btn-solve', 'btn-resolove');
@@ -613,7 +643,7 @@ function showTranslation(md) {
   document.getElementById('translation-body').innerHTML = marked.parse(md);
   document.getElementById('btn-translate').style.display = 'none';
   document.getElementById('btn-retranslate').style.display = '';
-  hljs.highlightAll();
+  renderCode();
 }
 function startTranslation() {
   setButtonsDisabled(['btn-translate', 'btn-retranslate'], true);
@@ -634,7 +664,7 @@ function showSolution(md) {
   document.getElementById('solution-body').innerHTML = marked.parse(md);
   document.getElementById('btn-solve').style.display = 'none';
   document.getElementById('btn-resolove').style.display = '';
-  hljs.highlightAll();
+  renderCode();
 }
 function startSolution() {
   setButtonsDisabled(['btn-solve', 'btn-resolove'], true);
@@ -684,7 +714,7 @@ function renderSimilarPanel(n, problemMd) {
               onclick="startSimilarSolution(${n}, true)">重新解题</button>
     </div>
   `;
-  hljs.highlightAll();
+  renderCode();
   // 加载已有题解缓存
   fetch(`/api/solutions/${currentId}/similar/${n}/solution/`)
     .then(r => r.json())
@@ -694,7 +724,7 @@ function renderSimilarPanel(n, problemMd) {
         document.getElementById('btn-similar-solve').style.display = 'none';
         const rebtn = document.getElementById('btn-similar-resolove');
         if (rebtn) rebtn.style.display = '';
-        hljs.highlightAll();
+        renderCode();
       }
     });
 }
@@ -741,7 +771,7 @@ function startSimilarSolution(n) {
             if (s) s.style.display = 'none';
             const r2 = document.getElementById('btn-similar-resolove');
             if (r2) r2.style.display = '';
-            hljs.highlightAll();
+            renderCode();
           }
         });
     });
@@ -778,7 +808,7 @@ function streamSSE(url, targetId, onDone) {
         setLLMStatus('working');
         buffer += msg.text;
         target.innerHTML = marked.parse(buffer);
-        hljs.highlightAll();
+        renderCode();
       }
     }
 
