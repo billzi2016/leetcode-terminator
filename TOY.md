@@ -17,7 +17,7 @@
 
 **架构**
 - 没有数据库，数据全在内存和文件系统里
-- 更不要说分库分表、读写分离、Sharding
+- 更不要说分库分表、读写分离、Sharding (主要是因为md在vscode里面就能直接查看,非常方便,写到postgresql或者sqlite还得挂上dbeaver才能看)
 - 没有消息队列，没有任务调度，没有异步 Worker
 - 没有缓存层（Redis/Memcached）
 - 没有独立前端，HTML 直接从 Django Template 出来
