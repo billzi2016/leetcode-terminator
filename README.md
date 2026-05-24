@@ -1,5 +1,13 @@
 # LeetCode Terminator
 
+> LeetCode 大概率已经凉了。
+>
+> 这个项目从零到完整功能，AI 不到半小时生成完毕——翻译、题解、举一反三、流式输出、侧边栏筛选、Markdown 渲染、代码高亮行号、持久化缓存、Docker 部署、47 个测试全绿。保守估计是一名人类工程师一周的工作量。
+>
+> 代码是纯 AI 写的。
+
+---
+
 本地 LeetCode 刷题辅助工具。左侧题目列表，右侧展示英文原题、中文翻译、中文题解，并支持举一反三。由本地 Ollama `gpt-oss:120b` 驱动，所有生成结果持久化为 Markdown 文件。
 
 ## 前置条件
@@ -27,10 +35,23 @@ pip install -r requirements.txt
 ## 启动
 
 ```bash
-python manage.py runserver
+./start.sh
 ```
 
 浏览器访问 `http://localhost:8000`
+
+## 停止
+
+```bash
+# 方式一：Ctrl+C（前台运行时）
+
+# 方式二：按端口号杀掉进程
+kill $(lsof -ti:8000)
+
+# 方式三：查找后手动确认
+lsof -i:8000
+kill <PID>
+```
 
 ## 运行测试
 
@@ -63,6 +84,7 @@ leetcode-terminator/
 │               ├── problem.md
 │               └── solution.md
 ├── tests/              pytest 测试
+├── start.sh            一键启动脚本
 └── leetcode_problems.json  2913 道题数据
 ```
 
