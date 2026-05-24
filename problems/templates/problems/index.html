@@ -29,7 +29,8 @@
     header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 20px;
       padding: 0 24px;
       height: 60px;
       background: #ffffff;
@@ -329,30 +330,31 @@
 
 <header>
   <h1>⚡ LeetCode Terminator</h1>
-  <div style="display:flex; align-items:center; gap:20px;">
-    <!-- 状态 + 统计 -->
-    <div style="display:flex; align-items:center; gap:14px; font-size:13px; color:#57606a;
-                background:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; padding:5px 14px;">
-      <span id="llm-status" style="font-weight:600; color:#1a7f37; min-width:40px;">就绪</span>
-      <span style="color:#d0d7de;">|</span>
-      <span id="llm-tokens">0 tokens</span>
-      <span style="color:#d0d7de;">|</span>
-      <span id="llm-tps">0 tokens/s</span>
+
+  <!-- 状态 + 统计 -->
+  <div style="display:flex; align-items:center; gap:14px; font-size:13px; color:#57606a;
+              background:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; padding:5px 14px;">
+    <span id="llm-status" style="font-weight:600; color:#1a7f37; min-width:40px;">就绪</span>
+    <span style="color:#d0d7de;">|</span>
+    <span id="llm-tokens">0 tokens</span>
+    <span style="color:#d0d7de;">|</span>
+    <span id="llm-tps">0 tokens/s</span>
+  </div>
+
+  <!-- 思考强度切换 -->
+  <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#57606a;">
+    <span>思考强度</span>
+    <div style="display:flex; border:1px solid #d0d7de; border-radius:6px; overflow:hidden;">
+      <button id="think-default" onclick="setThink(null)"
+        style="padding:4px 12px; font-size:13px; border:none; cursor:pointer; background:#0969da; color:#fff;">默认</button>
+      <button id="think-high" onclick="setThink('high')"
+        style="padding:4px 12px; font-size:13px; border:none; cursor:pointer; background:#f6f8fa; color:#24292f;">High</button>
     </div>
-    <!-- 思考强度切换 -->
-    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#57606a;">
-      <span>思考强度</span>
-      <div style="display:flex; border:1px solid #d0d7de; border-radius:6px; overflow:hidden;">
-        <button id="think-default" onclick="setThink(null)"
-          style="padding:4px 12px; font-size:13px; border:none; cursor:pointer; background:#0969da; color:#fff;">默认</button>
-        <button id="think-high" onclick="setThink('high')"
-          style="padding:4px 12px; font-size:13px; border:none; cursor:pointer; background:#f6f8fa; color:#24292f;">High</button>
-      </div>
-    </div>
-    <div id="health-dot">
-      <span class="dot"></span>
-      <span id="health-label">检测中...</span>
-    </div>
+  </div>
+
+  <div id="health-dot">
+    <span class="dot"></span>
+    <span id="health-label">检测中...</span>
   </div>
 </header>
 
