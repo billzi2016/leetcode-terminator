@@ -365,6 +365,10 @@
     <span id="llm-tokens">0 tokens</span>
     <span style="color:#d0d7de;">|</span>
     <span id="llm-tps">0 tokens/s</span>
+    <span style="color:#d0d7de;">|</span>
+    <span id="llm-duration" title="回答时长">—</span>
+    <span style="color:#d0d7de;">|</span>
+    <span id="llm-time" title="完成时间">—</span>
   </div>
 
   <!-- 思考强度切换 -->
@@ -833,6 +837,7 @@ function streamSSE(url, targetId, onDone) {
   target.innerHTML = '';
 
   setLLMStatus('working');
+  const streamStart = Date.now();
 
   const es = new EventSource(url);
   activeStream = es;
@@ -844,6 +849,10 @@ function streamSSE(url, targetId, onDone) {
     if (msg.type === 'done') {
       es.close(); activeStream = null;
       setLLMStatus('ready');
+      const secs = ((Date.now() - streamStart) / 1000).toFixed(1);
+      document.getElementById('llm-duration').textContent = secs + 's';
+      document.getElementById('llm-time').textContent =
+        new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       if (onDone) onDone();
       return;
     }
