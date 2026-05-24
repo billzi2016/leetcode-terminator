@@ -76,7 +76,7 @@ ollama pull gpt-oss:120b
 ## 安装
 
 ```bash
-git clone https://github.com/bizi/leetcode-terminator
+git clone https://github.com/billzi2016/leetcode-terminator
 cd leetcode-terminator
 
 python -m venv .venv
