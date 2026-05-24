@@ -157,6 +157,7 @@ def list_problems(
             p for p in items
             if q_lower in p.get("title", "").lower()
             or q_lower in p.get("problem_slug", "").lower()
+            or q_lower in str(p.get("frontend_id", ""))
         ]
 
     if difficulty:
