@@ -89,6 +89,37 @@
       box-shadow: 0 0 0 3px rgba(9,105,218,0.1);
     }
 
+    /* ── topic 筛选列表 ── */
+    #topic-list {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 6px 0;
+      border-bottom: 1px solid #d0d7de;
+      flex-shrink: 0;
+    }
+    .topic-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.1s;
+      color: #24292f;
+    }
+    .topic-item:hover { background: #f6f8fa; }
+    .topic-item.active { background: #ddf4ff; border-left-color: #0969da; color: #0969da; font-weight: 600; }
+    .topic-item .topic-count {
+      font-size: 11px;
+      color: #57606a;
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-radius: 10px;
+      padding: 1px 7px;
+    }
+    .topic-item.active .topic-count { background: #ddf4ff; border-color: #0969da; color: #0969da; }
+
     #problem-list { flex: 1; overflow-y: auto; padding: 6px 0; }
 
     .problem-item {
@@ -337,6 +368,7 @@
         <option value="Hard">Hard</option>
       </select>
     </div>
+    <div id="topic-list"></div>
     <div id="problem-list"></div>
   </aside>
 
@@ -425,6 +457,7 @@ let currentId = null;
 let currentSimilarN = null;
 let activeStream = null;
 let currentThink = null; // null = 默认，'high' = 深度推理
+let currentTopic = null;
 
 function setThink(val) {
   currentThink = val;
@@ -455,11 +488,47 @@ function pollHealth() {
 pollHealth();
 setInterval(pollHealth, 15000);
 
+// ── meta：topics + 难度数量 ──
+function loadMeta() {
+  fetch('/api/meta/')
+    .then(r => r.json())
+    .then(d => {
+      // 更新难度下拉
+      const sel = document.getElementById('diff-filter');
+      const diffs = ['Easy', 'Medium', 'Hard'];
+      sel.innerHTML = `<option value="">全部难度</option>` +
+        diffs.map(dv => {
+          const cnt = d.difficulties[dv] || 0;
+          return `<option value="${dv}">${dv} (${cnt})</option>`;
+        }).join('');
+
+      // 渲染 topic 列表
+      const tl = document.getElementById('topic-list');
+      tl.innerHTML = Object.entries(d.topics).map(([name, cnt]) => `
+        <div class="topic-item ${name === currentTopic ? 'active' : ''}"
+             onclick="selectTopic('${name.replace(/'/g, "\\'")}')">
+          <span>${name}</span>
+          <span class="topic-count">${cnt}</span>
+        </div>
+      `).join('');
+    });
+}
+
+function selectTopic(name) {
+  currentTopic = currentTopic === name ? null : name; // 再次点击取消
+  loadMeta(); // 刷新高亮
+  loadProblems(
+    document.getElementById('search-input').value,
+    document.getElementById('diff-filter').value
+  );
+}
+
 // ── 题目列表 ──
 function loadProblems(q = '', difficulty = '') {
   const p = new URLSearchParams({ page_size: 2913 });
   if (q) p.set('q', q);
   if (difficulty) p.set('difficulty', difficulty);
+  if (currentTopic) p.set('topic', currentTopic);
   fetch('/api/problems/?' + p)
     .then(r => r.json())
     .then(d => renderList(d.results));
@@ -774,6 +843,7 @@ function debounce(fn, delay) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
 
+loadMeta();
 loadProblems();
 </script>
 </body>

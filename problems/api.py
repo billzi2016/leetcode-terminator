@@ -11,7 +11,7 @@ from django.http import StreamingHttpResponse
 from ninja import NinjaAPI, Query
 from ninja.pagination import paginate, PageNumberPagination
 
-from .loader import PROBLEMS
+from .loader import PROBLEMS, TOPIC_COUNTS, DIFFICULTY_COUNTS
 from .ollama_client import check_health, stream_prompt
 from .prompts import (
     translation_prompt,
@@ -109,6 +109,15 @@ def health(request):
     return {"status": "ok" if check_health() else "down"}
 
 
+@api.get("/meta/")
+def meta(request):
+    """返回 topic 和难度的题目数量统计，启动时计算一次，不重复扫描。"""
+    return {
+        "topics": TOPIC_COUNTS,
+        "difficulties": DIFFICULTY_COUNTS,
+    }
+
+
 # ────────────────────────────────────────────────────────────
 # 题目列表 & 详情
 # ────────────────────────────────────────────────────────────
@@ -118,11 +127,12 @@ def list_problems(
     request,
     q: Optional[str] = Query(None, description="搜索标题或 slug"),
     difficulty: Optional[str] = Query(None, description="Easy / Medium / Hard"),
+    topic: Optional[str] = Query(None, description="按 topic 筛选"),
     page: int = Query(1),
     page_size: int = Query(50),
 ):
     """
-    返回题目列表，支持关键词搜索和难度筛选。
+    返回题目列表，支持关键词搜索、难度筛选、topic 筛选。
     默认每页 50 条，按 frontend_id 排序。
     """
     items = list(PROBLEMS.values())
@@ -138,6 +148,9 @@ def list_problems(
     if difficulty:
         diff = difficulty.capitalize()
         items = [p for p in items if p.get("difficulty") == diff]
+
+    if topic:
+        items = [p for p in items if topic in p.get("topics", [])]
 
     items.sort(key=lambda p: int(p.get("frontend_id", 0)))
 
