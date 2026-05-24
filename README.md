@@ -8,7 +8,60 @@
 
 ---
 
-本地 LeetCode 刷题辅助工具。左侧题目列表，右侧展示英文原题、中文翻译、中文题解，并支持举一反三。由本地 Ollama `gpt-oss:120b` 驱动，所有生成结果持久化为 Markdown 文件。
+## 这意味着什么
+
+软件工程的考核重心正在位移。
+
+以前面试考你能不能手写二叉树、背出快排、默写 DP 转移方程。这些能力在 AI 面前不值一提——10 秒钟，任何算法题都有完整题解、复杂度分析、多语言实现。**代码能力会往后放，但不会消失。** 你仍然需要读懂代码、判断对错、知道为什么这样写。
+
+真正会被放大的能力是：
+
+- **系统思维**：你能不能把一个模糊的需求拆成可执行的模块？
+- **架构判断**：选什么框架、怎么分层、数据往哪里流？
+- **全栈视野**：前端怎么交互、后端怎么设计 API、部署怎么跑起来？
+- **驾驭 AI 的能力**：你能不能让 AI 做正确的事，而不是让 AI 带着你跑偏？
+
+本质上，**你要知道自己在做什么**。AI 是工具，不是大脑。你不理解系统，AI 生成的代码就是一堆无法维护的垃圾。
+
+---
+
+## SDD：Spec-Driven Development
+
+本项目采用 **SDD（规格驱动开发）** 模式。
+
+流程是：**先写 Spec，代码从 Spec 里长出来。**
+
+```
+需求 → PRD（产品规格文档）→ 技术设计 → AI 生成代码 → 测试验证
+```
+
+项目里的 [`PRD.md`](./PRD.md) 就是这个 Spec。它定义了：
+
+- 页面布局和交互逻辑
+- API 端点和数据格式
+- 文件存储结构
+- Prompt 模板的设计原则
+- 测试覆盖范围
+
+AI 没有凭空发明任何东西，每一个模块都能在 Spec 里找到对应的描述。Spec 写得越清楚，AI 生成的代码就越准确，返工就越少。
+
+**SDD 的核心价值不是省时间，而是把"你到底要什么"这件事逼清楚。** 很多项目烂掉不是因为代码写得差，而是需求从来没想清楚过。
+
+---
+
+## 技术栈
+
+| 层 | 技术 |
+|---|---|
+| 后端 | Django 6 + Django Ninja (REST API) |
+| AI 接入 | Ollama Python SDK（本地，无需联网） |
+| 前端 | 原生 JS + HTMX + marked.js + highlight.js |
+| 数据 | 2913 道 LeetCode 题目 JSON，启动时加载进内存 |
+| 持久化 | Markdown 文件，按题号归档 |
+| 测试 | pytest + pytest-django，47 个测试 |
+| 部署 | Docker |
+
+---
 
 ## 前置条件
 
@@ -23,7 +76,7 @@ ollama pull gpt-oss:120b
 ## 安装
 
 ```bash
-git clone <repo>
+git clone https://github.com/bizi/leetcode-terminator
 cd leetcode-terminator
 
 python -m venv .venv
@@ -84,6 +137,7 @@ leetcode-terminator/
 │               ├── problem.md
 │               └── solution.md
 ├── tests/              pytest 测试
+├── PRD.md              产品规格文档（Spec）
 ├── start.sh            一键启动脚本
 └── leetcode_problems.json  2913 道题数据
 ```
