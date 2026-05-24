@@ -285,9 +285,9 @@
                 background:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; padding:5px 14px;">
       <span id="llm-status" style="font-weight:600; color:#1a7f37; min-width:40px;">就绪</span>
       <span style="color:#d0d7de;">|</span>
-      <span id="llm-tokens">0 tok</span>
+      <span id="llm-tokens">0 tokens</span>
       <span style="color:#d0d7de;">|</span>
-      <span id="llm-tps">0 tok/s</span>
+      <span id="llm-tps">0 tokens/s</span>
     </div>
     <!-- 思考强度切换 -->
     <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#57606a;">
@@ -686,8 +686,8 @@ function streamSSE(url, targetId, onDone) {
     }
 
     if (msg.type === 'stats') {
-      document.getElementById('llm-tokens').textContent = msg.tokens + ' tok';
-      document.getElementById('llm-tps').textContent = msg.tps + ' tok/s';
+      document.getElementById('llm-tokens').textContent = msg.tokens + ' tokens';
+      document.getElementById('llm-tps').textContent = msg.tps + ' tokens/s';
     }
   };
   es.onerror = () => { es.close(); activeStream = null; setLLMStatus('ready'); };
