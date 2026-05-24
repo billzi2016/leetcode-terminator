@@ -7,10 +7,11 @@ from unittest.mock import patch
 
 
 def _fake_chunks(*texts):
-    """构造 mock streaming generator，模拟 Ollama 逐块返回。"""
+    """构造 mock streaming generator，模拟 Ollama 逐块返回结构化 dict。"""
     def gen():
         for t in texts:
-            yield t
+            yield {"type": "token", "text": t, "thinking": False}
+        yield {"type": "stats", "tokens": sum(len(t) for t in texts), "tps": 10.0}
     return gen()
 
 
@@ -50,16 +51,16 @@ def test_stream_sse_format(client, tmp_solutions):
 
 @pytest.mark.django_db
 def test_stream_done_signal(client, tmp_solutions):
-    """流结束时应包含 [DONE] 信号，前端据此关闭 EventSource。"""
+    """流结束时应包含 type=done 的 SSE 消息，前端据此关闭 EventSource。"""
     with patch("problems.api.stream_prompt", return_value=_fake_chunks("内容")):
         r = client.get("/api/solutions/1/translation/stream/")
         chunks = [c.decode() for c in r.streaming_content]
-    assert any("[DONE]" in c for c in chunks)
+    assert any('"type": "done"' in c for c in chunks)
 
 
 @pytest.mark.django_db
 def test_stream_overwrites_existing_file(client, tmp_solutions):
-    """重新生成时应覆盖已有文件，不追加。"""
+    """重新生成时应覆盖已有文件，仅保留非推理阶段文本。"""
     path = tmp_solutions / "1" / "solution.md"
     path.parent.mkdir(parents=True)
     path.write_text("旧内容", encoding="utf-8")

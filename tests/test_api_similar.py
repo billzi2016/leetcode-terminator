@@ -6,9 +6,11 @@ from unittest.mock import patch
 
 
 def _fake_chunks(*texts):
+    """构造 mock streaming generator，模拟 Ollama 逐块返回结构化 dict。"""
     def gen():
         for t in texts:
-            yield t
+            yield {"type": "token", "text": t, "thinking": False}
+        yield {"type": "stats", "tokens": sum(len(t) for t in texts), "tps": 10.0}
     return gen()
 
 

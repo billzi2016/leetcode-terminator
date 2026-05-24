@@ -74,21 +74,21 @@ def _read_md(path: Path) -> Optional[str]:
     return None
 
 
-def _stream_to_file(prompt: str, filepath: Path):
+def _stream_to_file(prompt: str, filepath: Path, think: str | None = None):
     """
     SSE streaming 生成器：
-    1. 向 Ollama 发送 prompt，逐 chunk yield SSE 格式文本
-    2. 全部完成后写入文件
+    1. 向 Ollama 发送 prompt，逐 chunk yield SSE 格式 JSON
+    2. 仅收集非推理阶段的文本，完成后写入文件
+    think: None = Ollama 默认，'high' = 深度推理
     """
     filepath.parent.mkdir(parents=True, exist_ok=True)
     collected = []
-    for chunk in stream_prompt(prompt):
-        collected.append(chunk)
-        # SSE 格式：data: <内容>\n\n
-        yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
-    # 所有 chunk 收集完毕，写入缓存文件
+    for item in stream_prompt(prompt, think=think):
+        if item["type"] == "token" and not item.get("thinking"):
+            collected.append(item["text"])
+        yield f"data: {json.dumps(item, ensure_ascii=False)}\n\n"
     filepath.write_text("".join(collected), encoding="utf-8")
-    yield "data: [DONE]\n\n"
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
 
 def _sse_response(generator):
@@ -183,15 +183,14 @@ def get_translation(request, problem_id: int):
 
 
 @api.get("/solutions/{problem_id}/translation/stream/")
-def stream_translation(request, problem_id: int):
+def stream_translation(request, problem_id: int, think: Optional[str] = Query(None)):
     """SSE：调用 Ollama 翻译原题，边生成边推流，完成后写入 translation.md。"""
     problem = PROBLEMS.get(problem_id)
     if not problem:
         return api.create_response(request, {"detail": "Not found"}, status=404)
     filepath = _solution_dir(problem_id) / "translation.md"
-    # 用拼装后的完整描述翻译，包含 examples 和 constraints
     prompt = translation_prompt(_build_formatted_description(problem))
-    return _sse_response(_stream_to_file(prompt, filepath))
+    return _sse_response(_stream_to_file(prompt, filepath, think=think))
 
 
 # ────────────────────────────────────────────────────────────
@@ -206,14 +205,14 @@ def get_solution(request, problem_id: int):
 
 
 @api.get("/solutions/{problem_id}/solution/stream/")
-def stream_solution(request, problem_id: int):
+def stream_solution(request, problem_id: int, think: Optional[str] = Query(None)):
     """SSE：调用 Ollama 生成题解，边生成边推流，完成后写入 solution.md。"""
     problem = PROBLEMS.get(problem_id)
     if not problem:
         return api.create_response(request, {"detail": "Not found"}, status=404)
     filepath = _solution_dir(problem_id) / "solution.md"
     prompt = solution_prompt(problem)
-    return _sse_response(_stream_to_file(prompt, filepath))
+    return _sse_response(_stream_to_file(prompt, filepath, think=think))
 
 
 # ────────────────────────────────────────────────────────────
@@ -241,19 +240,18 @@ def get_similar_problem(request, problem_id: int, n: int):
 
 
 @api.get("/solutions/{problem_id}/similar/{n}/problem/stream/")
-def stream_similar_problem(request, problem_id: int, n: int):
+def stream_similar_problem(request, problem_id: int, n: int, think: Optional[str] = Query(None)):
     """SSE：生成第 n 道相似题目，写入 similar/{n}/problem.md，同时清除旧 solution.md。"""
     problem = PROBLEMS.get(problem_id)
     if not problem:
         return api.create_response(request, {"detail": "Not found"}, status=404)
     dir_ = _similar_dir(problem_id, n)
-    # 重新出题时删除旧题解，防止题目和题解不匹配
     old_solution = dir_ / "solution.md"
     if old_solution.exists():
         old_solution.unlink()
     filepath = dir_ / "problem.md"
     prompt = similar_problem_prompt(problem)
-    return _sse_response(_stream_to_file(prompt, filepath))
+    return _sse_response(_stream_to_file(prompt, filepath, think=think))
 
 
 @api.get("/solutions/{problem_id}/similar/{n}/solution/")
@@ -264,11 +262,11 @@ def get_similar_solution(request, problem_id: int, n: int):
 
 
 @api.get("/solutions/{problem_id}/similar/{n}/solution/stream/")
-def stream_similar_solution(request, problem_id: int, n: int):
+def stream_similar_solution(request, problem_id: int, n: int, think: Optional[str] = Query(None)):
     """SSE：生成第 n 道相似题的题解，写入 similar/{n}/solution.md。"""
     problem_text = _read_md(_similar_dir(problem_id, n) / "problem.md")
     if not problem_text:
         return api.create_response(request, {"detail": "先生成题目再生成题解"}, status=400)
     filepath = _similar_dir(problem_id, n) / "solution.md"
     prompt = similar_solution_prompt(problem_text)
-    return _sse_response(_stream_to_file(prompt, filepath))
+    return _sse_response(_stream_to_file(prompt, filepath, think=think))
