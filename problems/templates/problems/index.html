@@ -635,7 +635,14 @@ function addSimilar() {
       const items = d.items || [];
       const n = items.length > 0 ? Math.max(...items) + 1 : 1;
       currentSimilarN = n;
-      loadSimilarList();
+      // 立刻把新 tab 加入栏中并标为 active，不等生成完成
+      const tabs = document.getElementById('similar-tabs');
+      tabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn active';
+      btn.textContent = `#${n}`;
+      btn.onclick = () => selectSimilarTab(n);
+      tabs.appendChild(btn);
       renderSimilarPanel(n, null);
       streamSSE(`/api/solutions/${currentId}/similar/${n}/problem/stream/${thinkParam()}`,
         'similar-problem-body', () => selectSimilarTab(n));
