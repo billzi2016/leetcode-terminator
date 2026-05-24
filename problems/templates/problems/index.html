@@ -5,14 +5,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LeetCode Terminator</title>
-  <link rel="stylesheet" href="{% static 'vendor/highlight-github-dark.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/highlight-github.min.css' %}">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* 150% 缩放基准：body font-size 21px，所有尺寸按 1.5x 调整 */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
+      font-size: 15px;
+      background: #f6f8fa;
+      color: #24292f;
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -24,190 +26,212 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
-      height: 48px;
-      background: #161b22;
-      border-bottom: 1px solid #30363d;
+      padding: 0 24px;
+      height: 60px;
+      background: #ffffff;
+      border-bottom: 1px solid #d0d7de;
       flex-shrink: 0;
     }
-    header h1 { font-size: 15px; font-weight: 600; color: #58a6ff; }
+    header h1 { font-size: 18px; font-weight: 700; color: #0969da; }
+
     #health-dot {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #8b949e;
+      gap: 8px;
+      font-size: 14px;
+      color: #57606a;
     }
-    #health-dot span {
-      width: 8px; height: 8px;
+    #health-dot span.dot {
+      width: 11px; height: 11px;
       border-radius: 50%;
-      background: #3fb950;
+      background: #1a7f37;
       display: inline-block;
     }
-    #health-dot.down span { background: #f85149; }
+    #health-dot.down span.dot { background: #cf222e; }
 
     /* ── 主体 ── */
-    .main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    .main { display: flex; flex: 1; overflow: hidden; }
 
     /* ── 左栏 ── */
     aside {
-      width: 280px;
+      width: 360px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid #30363d;
-      background: #161b22;
+      border-right: 1px solid #d0d7de;
+      background: #ffffff;
     }
     .sidebar-filters {
-      padding: 10px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      border-bottom: 1px solid #30363d;
+      gap: 10px;
+      border-bottom: 1px solid #d0d7de;
     }
     .sidebar-filters input,
     .sidebar-filters select {
-      background: #0d1117;
-      border: 1px solid #30363d;
-      color: #e6edf3;
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      color: #24292f;
       border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 8px 12px;
+      font-size: 14px;
       width: 100%;
     }
     .sidebar-filters input:focus,
     .sidebar-filters select:focus {
       outline: none;
-      border-color: #58a6ff;
+      border-color: #0969da;
+      box-shadow: 0 0 0 3px rgba(9,105,218,0.1);
     }
 
-    #problem-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px 0;
-    }
+    #problem-list { flex: 1; overflow-y: auto; padding: 6px 0; }
+
     .problem-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 7px 14px;
+      padding: 9px 18px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       border-left: 3px solid transparent;
       transition: background 0.1s;
+      gap: 8px;
     }
-    .problem-item:hover { background: #1c2128; }
-    .problem-item.active {
-      background: #1c2128;
-      border-left-color: #58a6ff;
+    .problem-item:hover { background: #f6f8fa; }
+    .problem-item.active { background: #ddf4ff; border-left-color: #0969da; }
+
+    .problem-item .pid { color: #57606a; min-width: 42px; font-size: 13px; }
+    .problem-item .ptitle {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .problem-item .pid { color: #8b949e; min-width: 36px; }
-    .problem-item .ptitle { flex: 1; margin: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     .badge {
-      font-size: 10px;
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-weight: 500;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      white-space: nowrap;
     }
-    .badge.Easy    { background: #1a4a2e; color: #3fb950; }
-    .badge.Medium  { background: #4a3520; color: #e3b341; }
-    .badge.Hard    { background: #4a1a1a; color: #f85149; }
+    .badge.Easy   { background: #dafbe1; color: #1a7f37; }
+    .badge.Medium { background: #fff8c5; color: #9a6700; }
+    .badge.Hard   { background: #ffebe9; color: #cf222e; }
 
     /* ── 右栏 ── */
     main {
       flex: 1;
       overflow-y: auto;
-      padding: 24px 32px;
+      padding: 30px 48px;
       display: flex;
       flex-direction: column;
       gap: 24px;
+      background: #f6f8fa;
     }
 
-    .problem-header h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
-    .problem-meta { display: flex; gap: 10px; align-items: center; font-size: 13px; color: #8b949e; }
+    .problem-header h2 { font-size: 26px; font-weight: 700; margin-bottom: 10px; color: #24292f; }
+    .problem-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .topic-tag {
-      background: #1c2128;
-      border: 1px solid #30363d;
+      background: #ffffff;
+      border: 1px solid #d0d7de;
       border-radius: 12px;
-      padding: 2px 8px;
-      font-size: 11px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #57606a;
     }
 
-    /* ── 卡片区块 ── */
+    /* ── 카드 ── */
     .section {
-      background: #161b22;
-      border: 1px solid #30363d;
+      background: #ffffff;
+      border: 1px solid #d0d7de;
       border-radius: 10px;
       overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
     .section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
-      background: #1c2128;
-      border-bottom: 1px solid #30363d;
-      font-size: 13px;
+      padding: 13px 20px;
+      background: #f6f8fa;
+      border-bottom: 1px solid #d0d7de;
+      font-size: 14px;
       font-weight: 600;
+      color: #24292f;
     }
     .section-body {
-      padding: 16px;
-      font-size: 14px;
-      line-height: 1.7;
-      white-space: pre-wrap;
+      padding: 20px;
+      font-size: 15px;
+      line-height: 1.75;
     }
     .section-body.md-body { white-space: normal; }
 
-    /* ── Markdown 渲染样式 ── */
-    .md-body h2 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: #58a6ff; }
-    .md-body p  { margin-bottom: 10px; }
-    .md-body pre { margin: 10px 0; border-radius: 8px; overflow: auto; }
+    /* ── Markdown 渲染 ── */
+    .md-body h2 { font-size: 17px; font-weight: 700; margin: 20px 0 10px; color: #0969da; }
+    .md-body h3 { font-size: 15px; font-weight: 600; margin: 14px 0 6px; }
+    .md-body p  { margin-bottom: 12px; }
+    .md-body pre {
+      margin: 12px 0;
+      border-radius: 8px;
+      overflow: auto;
+      border: 1px solid #d0d7de;
+      font-size: 14px;
+    }
     .md-body code:not(pre code) {
-      background: #1c2128;
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 13px;
+      color: #cf222e;
     }
-    .md-body ul, .md-body ol { padding-left: 20px; margin-bottom: 10px; }
+    .md-body ul, .md-body ol { padding-left: 24px; margin-bottom: 12px; }
+    .md-body li { margin-bottom: 4px; }
+    .md-body strong { color: #24292f; }
+    .md-body blockquote {
+      border-left: 3px solid #d0d7de;
+      padding-left: 14px;
+      color: #57606a;
+      margin: 10px 0;
+    }
 
     /* ── 按钮 ── */
     .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
-      padding: 5px 14px;
+      padding: 6px 16px;
       border-radius: 6px;
-      border: 1px solid #30363d;
-      background: #21262d;
-      color: #e6edf3;
-      font-size: 12px;
+      border: 1px solid #d0d7de;
+      background: #f6f8fa;
+      color: #24292f;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .btn:hover { background: #30363d; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn.primary { background: #1f6feb; border-color: #1f6feb; }
-    .btn.primary:hover { background: #388bfd; }
+    .btn:hover { background: #e9ecef; border-color: #a8b1ba; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn.primary {
+      background: #0969da;
+      border-color: #0969da;
+      color: #ffffff;
+    }
+    .btn.primary:hover { background: #0860ca; }
 
     /* ── 举一反三 tabs ── */
-    .similar-tabs {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    .similar-tabs { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .tab-btn {
-      padding: 3px 10px;
-      border-radius: 12px;
-      border: 1px solid #30363d;
-      background: transparent;
-      color: #8b949e;
-      font-size: 12px;
+      padding: 4px 14px;
+      border-radius: 14px;
+      border: 1px solid #d0d7de;
+      background: #f6f8fa;
+      color: #57606a;
+      font-size: 13px;
       cursor: pointer;
+      font-weight: 500;
     }
-    .tab-btn.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+    .tab-btn:hover { background: #e9ecef; }
+    .tab-btn.active { background: #0969da; border-color: #0969da; color: #fff; }
 
     /* 空状态 */
     #empty-state {
@@ -216,31 +240,33 @@
       align-items: center;
       justify-content: center;
       flex: 1;
-      color: #8b949e;
-      gap: 8px;
+      color: #57606a;
+      gap: 10px;
     }
-    #empty-state h3 { font-size: 16px; }
-    #empty-state p  { font-size: 13px; }
+    #empty-state h3 { font-size: 20px; color: #24292f; }
+    #empty-state p  { font-size: 15px; }
 
-    ::-webkit-scrollbar { width: 6px; }
+    /* loading 动效 */
+    .loading-text { color: #57606a; font-style: italic; font-size: 14px; }
+
+    ::-webkit-scrollbar { width: 7px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #d0d7de; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8b1ba; }
   </style>
 </head>
 <body>
 
-<!-- 顶栏 -->
 <header>
   <h1>⚡ LeetCode Terminator</h1>
   <div id="health-dot">
-    <span></span>
+    <span class="dot"></span>
     <span id="health-label">检测中...</span>
   </div>
 </header>
 
 <div class="main">
-
-  <!-- 左栏：题目列表 -->
+  <!-- 左栏 -->
   <aside>
     <div class="sidebar-filters">
       <input id="search-input" type="text" placeholder="搜索题目..." />
@@ -254,17 +280,16 @@
     <div id="problem-list"></div>
   </aside>
 
-  <!-- 右栏：题目详情 + 操作 -->
+  <!-- 右栏 -->
   <main id="main-panel">
     <div id="empty-state">
       <h3>选择一道题目开始</h3>
       <p>从左侧列表点击任意题目</p>
     </div>
 
-    <!-- 题目详情区（初始隐藏） -->
     <div id="problem-detail" style="display:none;">
 
-      <!-- 题目标题 & meta -->
+      <!-- 标题 -->
       <div class="problem-header">
         <h2 id="detail-title"></h2>
         <div class="problem-meta">
@@ -273,10 +298,10 @@
         </div>
       </div>
 
-      <!-- 英文原题 -->
+      <!-- 英文原题（拼装后的完整描述，用 marked 渲染） -->
       <div class="section">
         <div class="section-header">英文原题</div>
-        <div id="original-body" class="section-body"></div>
+        <div id="original-body" class="section-body md-body"></div>
       </div>
 
       <!-- 中文翻译 -->
@@ -284,7 +309,7 @@
         <div class="section-header">
           中文翻译
           <div class="btn-group">
-            <button class="btn" id="btn-translate" onclick="startTranslation()">开始翻译</button>
+            <button class="btn primary" id="btn-translate" onclick="startTranslation()">开始翻译</button>
             <button class="btn" id="btn-retranslate" style="display:none" onclick="startTranslation(true)">重新翻译</button>
           </div>
         </div>
@@ -309,11 +334,11 @@
           举一反三
           <button class="btn primary" onclick="addSimilar()">+ 新增</button>
         </div>
-        <div style="padding: 12px 16px; border-bottom: 1px solid #30363d;">
+        <div style="padding: 14px 20px; border-bottom: 1px solid #d0d7de;">
           <div class="similar-tabs" id="similar-tabs"></div>
         </div>
-        <div id="similar-panel" style="padding:16px;">
-          <p style="color:#8b949e; font-size:13px;">点击「+ 新增」生成相似题目</p>
+        <div id="similar-panel" class="section-body">
+          <p class="loading-text">点击「+ 新增」生成相似题目</p>
         </div>
       </div>
 
@@ -334,26 +359,18 @@ marked.setOptions({
   breaks: true,
 });
 
-// ── 全局状态 ──
-let currentId = null;       // 当前选中题目 id
-let currentSimilarN = null; // 当前举一反三 tab
-let allProblems = [];       // 完整题目列表缓存
-let activeStream = null;    // 当前 SSE 连接，切题时关闭
+let currentId = null;
+let currentSimilarN = null;
+let activeStream = null;
 
-// ── Ollama 健康轮询 ──
+// ── 健康轮询 ──
 function pollHealth() {
   fetch('/api/health/')
     .then(r => r.json())
-    .then(data => {
+    .then(d => {
       const dot = document.getElementById('health-dot');
-      const label = document.getElementById('health-label');
-      if (data.status === 'ok') {
-        dot.className = '';
-        label.textContent = 'Ollama 在线';
-      } else {
-        dot.className = 'down';
-        label.textContent = 'Ollama 离线';
-      }
+      document.getElementById('health-label').textContent = d.status === 'ok' ? 'Ollama 在线' : 'Ollama 离线';
+      dot.className = d.status === 'ok' ? '' : 'down';
     })
     .catch(() => {
       document.getElementById('health-dot').className = 'down';
@@ -363,22 +380,18 @@ function pollHealth() {
 pollHealth();
 setInterval(pollHealth, 15000);
 
-// ── 加载题目列表 ──
+// ── 题目列表 ──
 function loadProblems(q = '', difficulty = '') {
-  const params = new URLSearchParams({ page_size: 2913 });
-  if (q) params.set('q', q);
-  if (difficulty) params.set('difficulty', difficulty);
-  fetch('/api/problems/?' + params)
+  const p = new URLSearchParams({ page_size: 2913 });
+  if (q) p.set('q', q);
+  if (difficulty) p.set('difficulty', difficulty);
+  fetch('/api/problems/?' + p)
     .then(r => r.json())
-    .then(data => {
-      allProblems = data.results;
-      renderList(data.results);
-    });
+    .then(d => renderList(d.results));
 }
 
 function renderList(problems) {
-  const list = document.getElementById('problem-list');
-  list.innerHTML = problems.map(p => `
+  document.getElementById('problem-list').innerHTML = problems.map(p => `
     <div class="problem-item ${p.id === currentId ? 'active' : ''}"
          onclick="selectProblem(${p.id})">
       <span class="pid">${p.id}.</span>
@@ -388,18 +401,13 @@ function renderList(problems) {
   `).join('');
 }
 
-// ── 搜索 & 筛选 ──
 document.getElementById('search-input').addEventListener('input', debounce(() => {
-  loadProblems(
-    document.getElementById('search-input').value,
-    document.getElementById('diff-filter').value
-  );
+  loadProblems(document.getElementById('search-input').value,
+               document.getElementById('diff-filter').value);
 }, 300));
 document.getElementById('diff-filter').addEventListener('change', () => {
-  loadProblems(
-    document.getElementById('search-input').value,
-    document.getElementById('diff-filter').value
-  );
+  loadProblems(document.getElementById('search-input').value,
+               document.getElementById('diff-filter').value);
 });
 
 // ── 选题 ──
@@ -408,10 +416,9 @@ function selectProblem(id) {
   currentId = id;
   currentSimilarN = null;
 
-  // 高亮左栏
-  document.querySelectorAll('.problem-item').forEach(el => el.classList.remove('active'));
+  // 高亮左栏条目
   document.querySelectorAll('.problem-item').forEach(el => {
-    if (el.onclick.toString().includes(`(${id})`)) el.classList.add('active');
+    el.classList.toggle('active', el.onclick?.toString().includes(`(${id})`));
   });
 
   fetch(`/api/problems/${id}/`)
@@ -426,16 +433,18 @@ function selectProblem(id) {
       diff.className = `badge ${p.difficulty}`;
       document.getElementById('detail-topics').innerHTML =
         (p.topics || []).map(t => `<span class="topic-tag">${t}</span>`).join(' ');
-      document.getElementById('original-body').textContent = p.description || '';
 
-      // 重置区块
+      // 用 marked 渲染拼装后的完整英文描述
+      document.getElementById('original-body').innerHTML =
+        marked.parse(p.formatted_description || p.description || '');
+      hljs.highlightAll();
+
       resetSection('translation-body', 'btn-translate', 'btn-retranslate');
       resetSection('solution-body', 'btn-solve', 'btn-resolove');
       document.getElementById('similar-tabs').innerHTML = '';
       document.getElementById('similar-panel').innerHTML =
-        '<p style="color:#8b949e;font-size:13px;">点击「+ 新增」生成相似题目</p>';
+        '<p class="loading-text">点击「+ 新增」生成相似题目</p>';
 
-      // 加载已有缓存
       loadTranslation();
       loadSolution();
       loadSimilarList();
@@ -452,9 +461,7 @@ function resetSection(bodyId, btnId, reBtnId) {
 function loadTranslation() {
   fetch(`/api/solutions/${currentId}/translation/`)
     .then(r => r.json())
-    .then(d => {
-      if (d.content) showTranslation(d.content);
-    });
+    .then(d => { if (d.content) showTranslation(d.content); });
 }
 function showTranslation(md) {
   document.getElementById('translation-body').innerHTML = marked.parse(md);
@@ -462,15 +469,12 @@ function showTranslation(md) {
   document.getElementById('btn-retranslate').style.display = '';
   hljs.highlightAll();
 }
-function startTranslation(regen = false) {
-  document.getElementById('btn-translate').disabled = true;
-  document.getElementById('btn-retranslate').disabled = true;
-  document.getElementById('translation-body').innerHTML =
-    '<span style="color:#8b949e">翻译中...</span>';
+function startTranslation() {
+  setButtonsDisabled(['btn-translate', 'btn-retranslate'], true);
+  document.getElementById('translation-body').innerHTML = '<p class="loading-text">翻译中...</p>';
   streamSSE(`/api/solutions/${currentId}/translation/stream/`, 'translation-body', () => {
     loadTranslation();
-    document.getElementById('btn-translate').disabled = false;
-    document.getElementById('btn-retranslate').disabled = false;
+    setButtonsDisabled(['btn-translate', 'btn-retranslate'], false);
   });
 }
 
@@ -478,9 +482,7 @@ function startTranslation(regen = false) {
 function loadSolution() {
   fetch(`/api/solutions/${currentId}/solution/`)
     .then(r => r.json())
-    .then(d => {
-      if (d.content) showSolution(d.content);
-    });
+    .then(d => { if (d.content) showSolution(d.content); });
 }
 function showSolution(md) {
   document.getElementById('solution-body').innerHTML = marked.parse(md);
@@ -488,15 +490,12 @@ function showSolution(md) {
   document.getElementById('btn-resolove').style.display = '';
   hljs.highlightAll();
 }
-function startSolution(regen = false) {
-  document.getElementById('btn-solve').disabled = true;
-  document.getElementById('btn-resolove').disabled = true;
-  document.getElementById('solution-body').innerHTML =
-    '<span style="color:#8b949e">生成中...</span>';
+function startSolution() {
+  setButtonsDisabled(['btn-solve', 'btn-resolove'], true);
+  document.getElementById('solution-body').innerHTML = '<p class="loading-text">生成中...</p>';
   streamSSE(`/api/solutions/${currentId}/solution/stream/`, 'solution-body', () => {
     loadSolution();
-    document.getElementById('btn-solve').disabled = false;
-    document.getElementById('btn-resolove').disabled = false;
+    setButtonsDisabled(['btn-solve', 'btn-resolove'], false);
   });
 }
 
@@ -505,43 +504,36 @@ function loadSimilarList() {
   fetch(`/api/solutions/${currentId}/similar/`)
     .then(r => r.json())
     .then(d => {
-      const tabs = document.getElementById('similar-tabs');
-      tabs.innerHTML = (d.items || []).map(n =>
-        `<button class="tab-btn ${n === currentSimilarN ? 'active' : ''}"
-                 onclick="selectSimilarTab(${n})">#${n}</button>`
-      ).join('');
+      document.getElementById('similar-tabs').innerHTML =
+        (d.items || []).map(n =>
+          `<button class="tab-btn ${n === currentSimilarN ? 'active' : ''}"
+                   onclick="selectSimilarTab(${n})">#${n}</button>`
+        ).join('');
     });
 }
+
 function selectSimilarTab(n) {
   currentSimilarN = n;
   loadSimilarList();
-  const panel = document.getElementById('similar-panel');
-  panel.innerHTML = '<span style="color:#8b949e">加载中...</span>';
+  document.getElementById('similar-panel').innerHTML = '<p class="loading-text">加载中...</p>';
   fetch(`/api/solutions/${currentId}/similar/${n}/problem/`)
     .then(r => r.json())
-    .then(d => {
-      renderSimilarPanel(n, d.content);
-    });
+    .then(d => renderSimilarPanel(n, d.content));
 }
+
 function renderSimilarPanel(n, problemMd) {
   const panel = document.getElementById('similar-panel');
-  const hasProblem = !!problemMd;
   panel.innerHTML = `
-    <div class="section-body md-body" id="similar-problem-body">
-      ${hasProblem ? marked.parse(problemMd) : '<span style="color:#8b949e">题目生成中...</span>'}
+    <div class="md-body" id="similar-problem-body" style="padding-bottom:16px; border-bottom:1px solid #d0d7de; margin-bottom:16px;">
+      ${problemMd ? marked.parse(problemMd) : '<p class="loading-text">题目生成中...</p>'}
     </div>
-    <div class="btn-group" style="margin:12px 0;">
-      ${hasProblem
-        ? `<button class="btn" onclick="regenSimilarProblem(${n})">重新出题</button>`
-        : ''}
+    <div class="btn-group" style="margin-bottom:16px;">
+      ${problemMd ? `<button class="btn" onclick="regenSimilarProblem(${n})">重新出题</button>` : ''}
     </div>
-    <hr style="border-color:#30363d; margin:12px 0;">
-    <div class="section-body md-body" id="similar-solution-body"></div>
-    <div class="btn-group" style="margin-top:8px;">
+    <div class="md-body" id="similar-solution-body"></div>
+    <div class="btn-group" style="margin-top:12px;">
       <button class="btn primary" id="btn-similar-solve"
-              onclick="startSimilarSolution(${n})" ${!hasProblem ? 'disabled' : ''}>
-        生成解法
-      </button>
+              onclick="startSimilarSolution(${n})" ${!problemMd ? 'disabled' : ''}>生成解法</button>
       <button class="btn" id="btn-similar-resolove" style="display:none"
               onclick="startSimilarSolution(${n}, true)">重新解题</button>
     </div>
@@ -554,13 +546,14 @@ function renderSimilarPanel(n, problemMd) {
       if (d.content) {
         document.getElementById('similar-solution-body').innerHTML = marked.parse(d.content);
         document.getElementById('btn-similar-solve').style.display = 'none';
-        document.getElementById('btn-similar-resolove').style.display = '';
+        const rebtn = document.getElementById('btn-similar-resolove');
+        if (rebtn) rebtn.style.display = '';
         hljs.highlightAll();
       }
     });
 }
+
 function addSimilar() {
-  // 取当前最大序号 + 1
   fetch(`/api/solutions/${currentId}/similar/`)
     .then(r => r.json())
     .then(d => {
@@ -569,46 +562,39 @@ function addSimilar() {
       currentSimilarN = n;
       loadSimilarList();
       renderSimilarPanel(n, null);
-      // 立即开始生成题目
-      streamSSE(
-        `/api/solutions/${currentId}/similar/${n}/problem/stream/`,
-        'similar-problem-body',
-        () => { selectSimilarTab(n); }
-      );
+      streamSSE(`/api/solutions/${currentId}/similar/${n}/problem/stream/`,
+        'similar-problem-body', () => selectSimilarTab(n));
     });
 }
+
 function regenSimilarProblem(n) {
   renderSimilarPanel(n, null);
-  streamSSE(
-    `/api/solutions/${currentId}/similar/${n}/problem/stream/`,
-    'similar-problem-body',
-    () => { selectSimilarTab(n); }
-  );
+  streamSSE(`/api/solutions/${currentId}/similar/${n}/problem/stream/`,
+    'similar-problem-body', () => selectSimilarTab(n));
 }
-function startSimilarSolution(n, regen = false) {
-  document.getElementById('btn-similar-solve').disabled = true;
-  document.getElementById('similar-solution-body').innerHTML =
-    '<span style="color:#8b949e">生成中...</span>';
-  streamSSE(
-    `/api/solutions/${currentId}/similar/${n}/solution/stream/`,
-    'similar-solution-body',
-    () => {
+
+function startSimilarSolution(n) {
+  const btn = document.getElementById('btn-similar-solve');
+  if (btn) btn.disabled = true;
+  document.getElementById('similar-solution-body').innerHTML = '<p class="loading-text">生成中...</p>';
+  streamSSE(`/api/solutions/${currentId}/similar/${n}/solution/stream/`,
+    'similar-solution-body', () => {
       fetch(`/api/solutions/${currentId}/similar/${n}/solution/`)
         .then(r => r.json())
         .then(d => {
           if (d.content) {
             document.getElementById('similar-solution-body').innerHTML = marked.parse(d.content);
-            document.getElementById('btn-similar-solve').style.display = 'none';
-            if (document.getElementById('btn-similar-resolove'))
-              document.getElementById('btn-similar-resolove').style.display = '';
+            const s = document.getElementById('btn-similar-solve');
+            if (s) s.style.display = 'none';
+            const r2 = document.getElementById('btn-similar-resolove');
+            if (r2) r2.style.display = '';
             hljs.highlightAll();
           }
         });
-    }
-  );
+    });
 }
 
-// ── SSE streaming 核心函数 ──
+// ── SSE 核心 ──
 function streamSSE(url, targetId, onDone) {
   if (activeStream) activeStream.close();
   let buffer = '';
@@ -621,37 +607,32 @@ function streamSSE(url, targetId, onDone) {
 
   es.onmessage = (e) => {
     if (e.data === '[DONE]') {
-      es.close();
-      activeStream = null;
+      es.close(); activeStream = null;
       if (onDone) onDone();
       return;
     }
     try {
       buffer += JSON.parse(e.data);
-      // 边流边渲染 Markdown，使用 marked 实时更新
       target.innerHTML = marked.parse(buffer);
       hljs.highlightAll();
-      // 自动滚动到底部
       target.scrollIntoView({ block: 'end', behavior: 'smooth' });
-    } catch (err) { /* 忽略解析错误，等待完整 chunk */ }
+    } catch (_) {}
   };
-
-  es.onerror = () => {
-    es.close();
-    activeStream = null;
-  };
+  es.onerror = () => { es.close(); activeStream = null; };
 }
 
-// ── 防抖工具 ──
+// ── 工具 ──
+function setButtonsDisabled(ids, disabled) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabled;
+  });
+}
 function debounce(fn, delay) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
 
-// ── 初始加载题目列表 ──
 loadProblems();
 </script>
 </body>

@@ -27,6 +27,36 @@ api = NinjaAPI()
 # 工具函数
 # ────────────────────────────────────────────────────────────
 
+def _build_formatted_description(problem: dict) -> str:
+    """
+    拼装完整题目描述。
+    原始 description 字段中 "Example X:" 和 "Constraints:" 只是占位符，
+    实际内容在 examples 和 constraints 字段中，需要手动拼入。
+    """
+    lines = problem.get("description", "").split("\n")
+    # 去掉占位行（"Example 1:" / "Constraints:" 等空行头）
+    main_lines = [
+        l for l in lines
+        if not (l.strip().startswith("Example ") and l.strip().endswith(":"))
+        and l.strip() != "Constraints:"
+    ]
+    result = "\n".join(main_lines).strip()
+
+    examples = problem.get("examples", [])
+    if examples:
+        result += "\n\n"
+        for ex in examples:
+            result += f"**Example {ex['example_num']}:**\n```\n{ex.get('example_text', '')}\n```\n\n"
+
+    constraints = problem.get("constraints", [])
+    if constraints:
+        result += "**Constraints:**\n"
+        for c in constraints:
+            result += f"- `{c}`\n"
+
+    return result.strip()
+
+
 def _solution_dir(problem_id: int) -> Path:
     """返回某题的 solutions 文件夹路径，不自动创建。"""
     return Path(settings.SOLUTIONS_DIR) / str(problem_id)
@@ -134,11 +164,11 @@ def list_problems(
 
 @api.get("/problems/{problem_id}/")
 def get_problem(request, problem_id: int):
-    """返回单题完整数据，不存在返回 404。"""
+    """返回单题完整数据，附带拼装好的 formatted_description，不存在返回 404。"""
     problem = PROBLEMS.get(problem_id)
     if not problem:
         return api.create_response(request, {"detail": "Not found"}, status=404)
-    return problem
+    return {**problem, "formatted_description": _build_formatted_description(problem)}
 
 
 # ────────────────────────────────────────────────────────────
@@ -159,7 +189,8 @@ def stream_translation(request, problem_id: int):
     if not problem:
         return api.create_response(request, {"detail": "Not found"}, status=404)
     filepath = _solution_dir(problem_id) / "translation.md"
-    prompt = translation_prompt(problem.get("description", ""))
+    # 用拼装后的完整描述翻译，包含 examples 和 constraints
+    prompt = translation_prompt(_build_formatted_description(problem))
     return _sse_response(_stream_to_file(prompt, filepath))
 
 
