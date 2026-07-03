@@ -71,6 +71,12 @@ AI 没有凭空发明任何东西，每一个模块都能在 Spec 里找到对�
 
 ---
 
+## 数据来源
+
+- **题目 JSON**：`leetcode_problems.json`，来源 [neenza/leetcode-problems](https://github.com/neenza/leetcode-problems)
+
+---
+
 ## 前置条件
 
 - Python 3.11+
