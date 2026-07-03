@@ -42,3 +42,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Local LeetCode problem data
+leetcode_problems.json
+merged_problems.json
